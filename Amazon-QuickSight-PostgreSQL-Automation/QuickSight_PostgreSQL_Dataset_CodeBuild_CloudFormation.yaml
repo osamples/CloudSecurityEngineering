@@ -1,0 +1,352 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Deploys resources needed to create Aurora PostgreSQL Serverless DB, connect to and load files into the database from S3, and then create a QuickSight Data Source from the raw information. THIS IS A PROOF OF CONCEPT, replace your raw data as needed.
+Parameters:
+  DatabaseName:    
+      Type: String    
+      Description: Unique name to call Database Instance  
+  SecretName:
+      Type: String
+      Description: Unique name to call Secret for SecretsManager
+  EngineVersion:    
+      Type: String    
+      Description: Database engine version. Version 10.7 is compatible with PostgreSQL Serverless.    
+      Default: '10.7' 
+  AvailabilityZone:    
+      Type: String    
+      Description: Please ensure that this zone matches one of the subnet regions chosen.     
+      Default: us-east-1d  
+  VpcId:    
+      Type: AWS::EC2::VPC::Id    
+      Description: Choose your specific VPC.  
+  VpcSubnetId:    
+      Type: AWS::EC2::Subnet::Id    
+      Description: Ensure the subnet region correlates to the Availability Zone specified and is Private.
+  VpcSubnetId2:    
+      Type: AWS::EC2::Subnet::Id    
+      Description: Ensure the subnet region is Private.
+  VpcSecurityGroupId:    
+      Type: AWS::EC2::SecurityGroup::Id    
+      Description: Choose the Security Group created specifically for the database instance.  
+  DBSubnetGroupName:    
+      Type: String    
+      Description: This is the unique VPC ID.
+  BackupRetentionPeriod:    
+      Type: Number    
+      Description: The number of days for which automated backups are retained.    
+      Default: 1  
+  DeletionProtection:    
+      Type: String    
+      Default: True    
+      AllowedValues:       
+          - True      
+          - False    
+      Description: A value that indicates whether the DB cluster has deletion protection enabled. The database can't be deleted when deletion protection is enabled. By default, the deletion protection is enabled.
+  EnvironmentTag:
+      Type: String
+      Description: Value for the OCTO Environment tag. See https://infocorp365.sharepoint.com/sites/OCTO-ArchitectureOffice/SitePages/Public%20Cloud%20Tag%20Standards.aspx for info
+      AllowedValues:
+      - DEV
+      - QA
+      - UAT
+      - PROD
+      Default: DEV
+  FileName:
+      Type: String
+      Description: Name of JSON file that you would like to load into DB and QuickSight
+      Default: guardduty-port-findings.json
+  CodeBuildProjName:
+      Type: String
+      Description: Name for your CodeBuild Project
+      Default: QuickSight-Aurora-PostgreSQL-DataSource-Automation
+  QuickSightDataSource:
+      Type: String
+      Description: The name for the QuickSight Data Source you will create
+      Default: aurora-postgresql-json-datasource
+  QuickSightGroupName:
+      Type: String
+      Description: The name for the QuickSight Group you will create
+      Default: InfosecAdmins
+  VPCConnectionArn:
+      Type: String
+      Description: The ARN for your specific VPC Connection
+  InitialCommitBucket:
+      Type: String
+      Description: The name of the S3 bucket you uploaded the JSON file and ZIP archive of the code artifacts to 
+  InitialCommitKey:
+      Type: String
+      Description: Name of the package for the initial commit for the DevSecOps pipeline DO NOT include .zip
+      Default: codecommit-archive
+Resources:
+  MySecret:
+    Type: 'AWS::SecretsManager::Secret'
+    Properties:
+      Name: !Ref SecretName
+      Description: "This secret has a dynamically generated secret password."
+      GenerateSecretString:
+        SecretStringTemplate: '{"username": "postgres"}'
+        GenerateStringKey: "password"
+        PasswordLength: 30
+        ExcludeCharacters: '"@/\'
+      Tags:
+        -
+          Key: OrgID
+          Value: 00410
+        -
+          Key: Capacity
+          Value: BAU
+        -
+          Key: Contact
+          Value: DL-InfoSecEngineering@ihsmarkit.com
+        -
+          Key: Service
+          Value: GlobalCloudSecurity
+        -
+          Key: Environment
+          Value: !Ref EnvironmentTag  
+  Cluster:
+    Type: AWS::RDS::DBCluster
+    Properties:
+      AvailabilityZones: 
+        - !Ref AvailabilityZone
+      Engine: aurora-postgresql
+      EngineMode: serverless
+      Port: 5432
+      DBClusterParameterGroupName: default.aurora-postgresql10
+      SourceRegion: !Ref AvailabilityZone
+      EngineVersion: !Ref EngineVersion
+      DatabaseName: !Ref DatabaseName
+      MasterUsername: !Sub '{{resolve:secretsmanager:${MySecret}::username}}'
+      MasterUserPassword: !Sub '{{resolve:secretsmanager:${MySecret}::password}}'
+      DBClusterIdentifier: !Ref AWS::StackName
+      BackupRetentionPeriod: !Ref BackupRetentionPeriod
+      DeletionProtection: !Ref DeletionProtection
+      EnableHttpEndpoint: True
+      VpcSecurityGroupIds:
+        - !Ref VpcSecurityGroupId
+      DBSubnetGroupName: !Ref DBSubnetGroupName
+      Tags:
+        -
+          Key: OrgID
+          Value: 00410
+        -
+          Key: Capacity
+          Value: BAU
+        -
+          Key: Contact
+          Value: DL-InfoSecEngineering@ihsmarkit.com
+        -
+          Key: Service
+          Value: GlobalCloudSecurity
+        -
+          Key: Environment
+          Value: !Ref EnvironmentTag 
+  QuickSightDataSetCommit:
+    Type: AWS::CodeCommit::Repository
+    Properties:
+      RepositoryDescription: Contains the code artifacts for CodeBuild to create QuickSight Datasets - Managed by CloudFormation
+      RepositoryName: quicksight-aurora-postgresql-repo
+      Code:
+        S3:
+          Bucket: !Ref InitialCommitBucket
+          Key: !Sub '${InitialCommitKey}.zip'
+      Tags:
+        -
+          Key: OrgID
+          Value: 00410
+        -
+          Key: Capacity
+          Value: BAU
+        -
+          Key: Contact
+          Value: DL-InfoSecEngineering@ihsmarkit.com
+        -
+          Key: Service
+          Value: GlobalCloudSecurity
+        -
+          Key: Environment
+          Value: !Ref EnvironmentTag
+  CodeBuildServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEC2FullAccess
+      Policies:
+      - PolicyName: CodeBuildServiceRolePolicy
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Action:
+            - codecommit:GitPull
+            Resource: !GetAtt QuickSightDataSetCommit.Arn
+          - Effect: Allow
+            Action:
+            - s3:GetObject
+            - s3:GetObjectVersion
+            - s3:PutObject
+            - s3:GetBucketAcl
+            - s3:GetBucketLocation
+            Resource:
+              - !Sub 'arn:aws:s3:::${InitialCommitBucket}'
+              - !Sub 'arn:aws:s3:::${InitialCommitBucket}/*'          
+          - Effect: Allow
+            Action:
+            - kms:Decrypt
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            - quicksight:*
+            - iam:PassRole
+            Resource: '*'
+          - Effect: Allow
+            Action:
+            - secretsmanager:GetResourcePolicy
+            - secretsmanager:GetSecretValue
+            - secretsmanager:DescribeSecret
+            - secretsmanager:ListSecretVersionIds
+            Resource:
+              - !Ref MySecret
+          - Effect: Allow
+            Action:
+            - secretsmanager:GetRandomPassword
+            - secretsmanager:ListSecrets
+            Resource: '*'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal: { Service: codebuild.amazonaws.com }
+          Action:
+          - sts:AssumeRole
+      Tags:
+        -
+          Key: OrgID
+          Value: 00410
+        -
+          Key: Capacity
+          Value: BAU
+        -
+          Key: Contact
+          Value: DL-InfoSecEngineering@ihsmarkit.com
+        -
+          Key: Service
+          Value: GlobalCloudSecurity
+        -
+          Key: Environment
+          Value: !Ref EnvironmentTag
+  QuickSightDataSetCodeBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      VpcConfig:
+        SecurityGroupIds: 
+          - !Ref VpcSecurityGroupId
+        Subnets: 
+          - !Ref VpcSubnetId
+          - !Ref VpcSubnetId2
+        VpcId: !Ref VpcId
+      Name: !Ref CodeBuildProjName
+      Description: Connects to Aurora PostgreSQL Serverless database, loads JSON data into database, and creates a QuickSight datasource.  - Managed by CloudFormation
+      Environment:
+        ComputeType: BUILD_GENERAL1_MEDIUM
+        Image: aws/codebuild/standard:4.0
+        PrivilegedMode: True
+        Type: LINUX_CONTAINER
+        EnvironmentVariables:
+        - Name: MY_SECRET
+          Type: PLAINTEXT
+          Value: !Ref SecretName
+        - Name: DB_ENDPOINT
+          Type: PLAINTEXT
+          Value: !GetAtt Cluster.Endpoint.Address
+        - Name: DB_NAME
+          Type: PLAINTEXT
+          Value: !Ref DatabaseName
+        - Name: S3_FILENAME
+          Type: PLAINTEXT
+          Value: !Ref FileName
+        - Name: QUICKSIGHT_GROUP_NAME
+          Type: PLAINTEXT
+          Value: !Ref QuickSightGroupName
+        - Name: QUICKSIGHT_DATASOURCE_BUCKET
+          Type: PLAINTEXT
+          Value: !Ref InitialCommitBucket
+        - Name: QUICKSIGHT_DATASOURCE_NAME
+          Type: PLAINTEXT
+          Value: !Ref QuickSightDataSource
+        - Name: VPC_CONNECTION_ARN
+          Type: PLAINTEXT
+          Value: !Ref VPCConnectionArn
+      LogsConfig:
+        CloudWatchLogs:
+          Status: ENABLED
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Artifacts:
+        Type: NO_ARTIFACTS
+      Source:
+        BuildSpec: buildspec.yml
+        Type: CODECOMMIT
+        Location: !GetAtt QuickSightDataSetCommit.CloneUrlHttp
+      Tags:
+        -
+          Key: OrgID
+          Value: 00410
+        -
+          Key: Capacity
+          Value: BAU
+        -
+          Key: Contact
+          Value: DL-InfoSecEngineering@ihsmarkit.com
+        -
+          Key: Service
+          Value: GlobalCloudSecurity
+        -
+          Key: Environment
+          Value: !Ref EnvironmentTag
+  CodeBuildEventRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: QuickSight-Aurora-PostgreSQL-DataSet-Creator-Sched-Role
+      Policies:
+      - PolicyName: QuickSight-Aurora-PostgreSQL-DataSet-Creator-CodeBuildServiceRolePolicy
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Action:
+              - codebuild:StartBuild
+            Resource: '*'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal: { Service: events.amazonaws.com }
+          Action:
+            - sts:AssumeRole
+      Tags:
+        -
+          Key: OrgID
+          Value: 00410
+        -
+          Key: Capacity
+          Value: BAU
+        -
+          Key: Contact
+          Value: DL-InfoSecEngineering@ihsmarkit.com
+        -
+          Key: Service
+          Value: GlobalCloudSecurity
+        -
+          Key: Environment
+          Value: !Ref EnvironmentTag
+  QuickSightDataSetCodeBuildEvent: 
+    Type: AWS::Events::Rule
+    Properties:
+      Name: QuickSight-Aurora-PostgreSQL-DataSet-Creator-Rule
+      Description: Runs QuickSight-Aurora-PostgreSQL-DataSet-Creator every 24 hours - Managed by CloudFormation
+      ScheduleExpression: rate(24 hours)
+      State: ENABLED
+      Targets: 
+        - 
+          Arn: !GetAtt QuickSightDataSetCodeBuild.Arn
+          Id: QSCBAutomationTrigger
+          RoleArn: !GetAtt CodeBuildEventRole.Arn
