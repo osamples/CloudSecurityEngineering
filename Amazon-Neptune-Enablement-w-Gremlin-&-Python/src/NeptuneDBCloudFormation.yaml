@@ -1,0 +1,319 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Neptune deployment stack
+Parameters:
+    AvailabilityZone:
+        Type: String
+        Description: Provide the EC2 Availability Zone that instances in the DB Cluster can be created in.
+        Default: us-east-1d
+    BackupRetentionPeriod:
+        Type: Number
+        Description: Specifies the number of days for which automatic DB snapshots are retained.
+        Default: 1
+    DBClusterId:
+        Type: String
+        Description: This identifier is the unique key that identifies a DB cluster.
+    DBVPCName:
+        Type: AWS::EC2::VPC::Id
+        Description: Specifies information on the subnet group associated with the DB cluster, including the name, description, and subnets in the subnet group.
+    VPCIP:
+        Type: String
+        Description: The IP address corresponding to the chosen VPC.
+    DeletionProtection:
+        Type: String
+        Description: Indicates whether or not the DB cluster has deletion protection. 
+        Default: 'true'    
+        AllowedValues:       
+          - 'true'      
+          - 'false'   
+    EngineVersion:
+        Type: String
+        Description: Indicates the database engine version. Unless you have a reason to use an older engine version, you can just leave the default value (the most recent version).
+        Default: 1.0.3.0
+        AllowedValues:
+          - 1.0.1.0.200502.0
+          - 1.0.1.1
+          - 1.0.1.2
+          - 1.0.2.1
+          - 1.0.2.2
+          - 1.0.3.0
+    DBClusterPort:
+        Type: String
+        Default: '8182'
+        Description: Enter the port of your Neptune cluster.
+    DBInstanceClass:
+        Description: Neptune DB instance class that will be used for primary and all replicas
+        Type: String
+        Default: db.r5.large
+        AllowedValues:
+          - db.t3.medium
+          - db.r4.large
+          - db.r4.xlarge
+          - db.r4.2xlarge
+          - db.r4.4xlarge
+          - db.r4.8xlarge
+          - db.r5.large
+          - db.r5.xlarge
+          - db.r5.2xlarge
+          - db.r5.4xlarge
+          - db.r5.8xlarge
+          - db.r5.12xlarge   
+    IamAuthEnabled:
+        Type: String
+        Default: 'true'
+        AllowedValues:
+          - 'true'
+          - 'false'
+        Description: IAM Auth for Neptune is Enabled within template.  You can modify this once the cluster has been created.
+    StorageEncrypted:
+        Description:    Data-at-rest encryption
+        Type:           String
+        Default:        'true'
+        AllowedValues:
+        - 'true'
+        - 'false'
+    KmsKeyId:
+        Type: String
+        Description: If StorageEncrypted is true, the AWS KMS key identifier for the encrypted DB cluster. If you don't specify an AWS KMS key identifier, Neptune uses your default Amazon RDS encryption key (aws/rds) for your new Neptune DB instance. After you create an encrypted Neptune DB instance, you can't change the encryption key for that instance. So, be sure to determine your encryption key requirements before you create your encrypted Neptune DB instance.
+    SnapshotId:
+        Type: String
+        Description: Specifies the identifier for a DB cluster snapshot. Must match the identifier of an existing snapshot. After you restore a DB cluster using a SnapshotIdentifier, you must specify the same SnapshotIdentifier for any future updates to the DB cluster. When you specify this property for an update, the DB cluster is not restored from the snapshot again, and the data in the database is not changed. However, if you don't specify the SnapshotIdentifier, an empty DB cluster is created, and the original DB cluster is deleted. If you specify a property that is different from the previous snapshot restore property, the DB cluster is restored from the snapshot specified by the SnapshotIdentifier, and the original DB cluster is deleted.
+    VpcSGId:
+        Type: AWS::EC2::SecurityGroup::Id
+        Description: Provides the VPC security groups that the Security Group for Neptune DB will communicate with.
+    NeptuneEnableAuditLog:
+        Type: Number
+        Default: 0
+        AllowedValues:
+          - 0
+          - 1
+        Description: Enable Audit Log. 0 means disable and 1 means enable.
+    NeptuneQueryTimeout:
+        Description: Neptune DB parameters. Allowed values "10-2147483647"
+        Type: String
+        Default: 120000
+    MajorVersionUpgrade:
+        Description: Neptune DB major version upgrade
+        Type: String
+        Default: 'true'
+        AllowedValues:
+        - 'true'
+        - 'false'
+    MinorVersionUpgrade:
+        Description: Neptune DB minor version upgrade
+        Type: String
+        Default: 'true'
+        AllowedValues:
+        - 'true'
+        - 'false'
+    EnvironmentTag:
+        Type: String
+        Description: Value for the OCTO Environment tag. See https://infocorp365.sharepoint.com/sites/OCTO-ArchitectureOffice/SitePages/Public%20Cloud%20Tag%20Standards.aspx for info
+        AllowedValues:
+        - DEV
+        - QA
+        - UAT
+        - PROD
+        Default: DEV
+Resources:
+##IAM Roles
+    NeptuneServiceRole:
+      Type: AWS::IAM::Role
+      Properties:
+        Policies:
+        - PolicyName: NeptuneRolePolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+            - Effect: Allow
+              Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+              - iam:PassRole
+              Resource: '*'
+            - Effect: Allow
+              Action:
+              - 'rds:*'
+              - 'iam:GetAccountSummary'
+              - 'iam:ListAccountAliases'
+              - 'iam:PassRole'
+              Resource: '*'     
+            - Effect: Allow
+              Action:
+              - 'neptune-db:*'
+              Resource: '*'
+# The below lines specify the IAM role to this specific cluster. You will have to manually associate the role via the console if you wish to do this.               
+#              Resource: !Join 
+#              - ''
+#              - - !Sub 'arn:${AWS::Partition}:neptune-db:'
+#                - !Ref 'AWS::Region'
+#                - ':'
+#                - !Ref 'AWS::AccountId'
+#                - ':'
+#                - !GetAtt 
+#                    - NeptuneDBCluster
+#                    - ClusterResourceId
+#                - /*       
+            - Effect: Allow
+              Action:
+              - 's3:Get*'
+              - 's3:List*'
+              Resource: '*'                    
+        AssumeRolePolicyDocument:
+            Version: 2012-10-17
+            Statement:
+            - Effect: Allow
+              Principal: 
+                Service: 
+                  - ec2.amazonaws.com
+                  - rds.amazonaws.com
+              Action:
+              - sts:AssumeRole
+        Tags:
+            -
+                Key: OrgID
+                Value: 00410
+            -
+                Key: Capacity
+                Value: BAU
+            -
+                Key: Contact
+                Value: DL-InfoSecEngineering@ihsmarkit.com
+            -
+                Key: Service
+                Value: GlobalCloudSecurity
+            -
+                Key: Environment
+                Value: !Ref EnvironmentTag
+###
+    NeptuneSG:
+        Type: AWS::EC2::SecurityGroup
+        Properties: 
+          GroupDescription: Neptune DB Security Group
+          GroupName: !Sub 'Security Group for ${DBClusterId}'
+          VpcId: !Ref DBVPCName
+          SecurityGroupEgress: 
+            - IpProtocol: -1
+              CidrIp: 0.0.0.0/0
+          SecurityGroupIngress: 
+            - IpProtocol: tcp
+              FromPort: !Ref DBClusterPort
+              ToPort: !Ref DBClusterPort
+              SourceSecurityGroupId: !Ref VpcSGId
+            - IpProtocol: tcp
+              FromPort: 0
+              ToPort: 65535
+              SourceSecurityGroupId: !Ref VPCIP
+            - IpProtocol: tcp
+              FromPort: 80
+              ToPort: 80
+              SourceSecurityGroupId: !Ref VpcSGId
+            - IpProtocol: tcp
+              FromPort: 443
+              ToPort: 443
+              SourceSecurityGroupId: !Ref VpcSGId
+          Tags: 
+            -
+                Key: OrgID
+                Value: 00410
+            -
+                Key: Capacity
+                Value: BAU
+            -
+                Key: Contact
+                Value: DL-InfoSecEngineering@ihsmarkit.com
+            -
+                Key: Service
+                Value: GlobalCloudSecurity
+            -
+                Key: Environment
+                Value: !Ref EnvironmentTag 
+    NeptuneDBClusterParameterGroup:
+        Type: 'AWS::Neptune::DBClusterParameterGroup'
+        Properties:
+            Family: neptune1
+            Description: CloudFormation managed Neptune DB Cluster Parameter Group
+            Name: !Sub ${DBClusterId}-Cluster-Parameter-Group
+            Parameters:
+                neptune_enable_audit_log: !Ref NeptuneEnableAuditLog
+            Tags: 
+            -
+                Key: OrgID
+                Value: 00410
+            -
+                Key: Capacity
+                Value: BAU
+            -
+                Key: Contact
+                Value: DL-InfoSecEngineering@ihsmarkit.com
+            -
+                Key: Service
+                Value: GlobalCloudSecurity
+            -
+                Key: Environment
+                Value: !Ref EnvironmentTag 
+    NeptuneDBCluster:
+        Type: AWS::Neptune::DBCluster
+        Properties:
+            AssociatedRoles:    #Remove this section if the role specifies this specific cluster
+                - RoleArn: !GetAtt NeptuneServiceRole.Arn 
+            AvailabilityZones: 
+                - !Ref AvailabilityZone
+            BackupRetentionPeriod: !Ref BackupRetentionPeriod
+            DBClusterIdentifier: !Ref DBClusterId
+            DBClusterParameterGroupName: !Ref NeptuneDBClusterParameterGroup
+            DBSubnetGroupName: !Sub 'default-${DBVPCName}'
+            DeletionProtection: !Ref DeletionProtection
+            EngineVersion: !Ref EngineVersion
+            IamAuthEnabled: !Ref IamAuthEnabled
+            Port: !Ref DBClusterPort
+            StorageEncrypted: !Ref StorageEncrypted
+            KmsKeyId: !Ref KmsKeyId
+            VpcSecurityGroupIds: 
+                - !Ref NeptuneSG
+ #          SnapshotIdentifier: # Enable for the DB cluster snapshot from which you want to restore            
+            Tags: 
+            -
+                Key: OrgID
+                Value: 00410
+            -
+                Key: Capacity
+                Value: BAU
+            -
+                Key: Contact
+                Value: DL-InfoSecEngineering@ihsmarkit.com
+            -
+                Key: Service
+                Value: GlobalCloudSecurity
+            -
+                Key: Environment
+                Value: !Ref EnvironmentTag 
+        DependsOn:
+          - NeptuneServiceRole
+                  # Remove this if the role specifies this specific Cluster  
+          - NeptuneDBClusterParameterGroup
+          - NeptuneSG
+    # Neptune DB parameter group
+    NeptuneDBInstanceParameterGroup:
+        Type: "AWS::Neptune::DBParameterGroup"
+        Properties:
+            Description: "CloudFormation managed Neptune DB Instance Parameter Group"
+            Parameters:
+                neptune_query_timeout: !Ref NeptuneQueryTimeout
+            Family : neptune1
+            Name : !Sub ${DBClusterId}-Instance-Parameter-Group 
+    NeptuneDBInstance:
+        Type: "AWS::Neptune::DBInstance"
+        Properties:
+            AllowMajorVersionUpgrade: !Ref MajorVersionUpgrade
+            AutoMinorVersionUpgrade: !Ref MinorVersionUpgrade
+            DBClusterIdentifier: !Ref DBClusterId
+            DBInstanceClass: !Ref DBInstanceClass
+     #      DBInstanceIdentifier: !Ref DBInstanceIdentifier #Note: If you specify a name, you cannot perform updates that require replacement of this resource. You can perform updates that require no or some interruption. If you must replace the resource, specify a new name.
+            DBParameterGroupName: !Ref NeptuneDBInstanceParameterGroup
+     #      DBSnapshotIdentifier: # Enable for the DB cluster snapshot from which you want to restore
+            DBSubnetGroupName: !Sub 'default-${DBVPCName}'
+        DependsOn:
+          - NeptuneDBInstanceParameterGroup
+          - NeptuneDBCluster
+    
