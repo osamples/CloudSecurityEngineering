@@ -146,8 +146,8 @@ aws s3api list-buckets --query "Buckets[].Name"
 1. For our first dataset example, we will use the [Zachary Karate Club](http://konect.cc/networks/ucidata-zachary/) data from [UCI's Network Datasets](http://vlado.fmf.uni-lj.si/pub/networks/data/ucinet/ucidata.htm#kazalo). This data is already separated into edges and nodes and prepared in the Gremlin CSV format. Now we will upload the edge file and the node file to the S3 Bucket.
 
     ```bash
-    git clone https://ihsmarkit@dev.azure.com/ihsmarkit/Infosec/_git/Amazon-Neptune-(Graph-DB)-Enablement
-    cd Amazon-Neptune-(Graph-DB)-Enablement/Amazon-Neptune-Enablement-w-GREMLIN-&-Python
+    git clone https://github.com/osamples/CloudSecurityEngineering.git
+    cd CloudSecurityEngineering/Amazon-Neptune-Enablement-w-GREMLIN-&-Python
     aws s3 cp edge.csv s3://YOUR_BUCKET_NAME/karate/
     aws s3 cp node.csv s3://YOUR_BUCKET_NAME/karate/
     ```
