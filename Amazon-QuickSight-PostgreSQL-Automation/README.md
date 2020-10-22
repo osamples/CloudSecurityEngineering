@@ -65,8 +65,8 @@ Before we can create and load the database into QuickSight, we must have a few r
     Execute these lines on your command line in Cloud9 environment. This will copy the JSON file (we use guardduty-port-findings.json) from Azure DevOps to your s3 bucket created for this project. Before running these lines, ensure that you have inserted the correct directory, file name, and bucket name. 
 
     ```bash
-    git clone https://ihsmarkit@dev.azure.com/ihsmarkit/Infosec/_git/Amazon%20Quicksight%20Enablement
-    cd Amazon%20Quicksight%20Enablement/Sample-Datasets
+    git clone https://github.com/osamples/CloudSecurityEngineering.git/Amazon-QuickSight-PostgreSQL-Automation
+    cd Amazon-QuickSight-PostgreSQL-Automation/Sample-Datasets
     aws s3 cp guardduty-port-findings.json s3://YOUR_BUCKET_NAME
     ```
 
@@ -77,13 +77,13 @@ Before we can create and load the database into QuickSight, we must have a few r
 
     Within the AWS VPC console under `Network & Security`, select `Security Groups` and then `Create security group`.
 
-    ![CreateSecurityGroup](/Amazon-QuickSight-and-PostgreSQL-POC/3-Connect-QuickSight-to-Aurora-Serverless-PostgreSQL/Screenshots/CreateSecurityGroup.png)
+    ![CreateSecurityGroup](./screenshots/CreateSecurityGroup.png)
 
     Name the security group something like `'QuickSight-Access'`, provide a description, and choose the same VPC that your database uses.
 
     Add an inbound rule, choose `'PostgreSQL'` for `'Type'`, any description, and keep `'Source'` as `'Custom'`. The value for the custom source should associate to the region in which your database is in. You can find the correct CIDR [here](https://docs.aws.amazon.com/quicksight/latest/user/regions.html).
 
-    ![CreateSecurityGroup2](/Amazon-QuickSight-and-PostgreSQL-POC/3-Connect-QuickSight-to-Aurora-Serverless-PostgreSQL/Screenshots/CreateSecurityGroup2.png)
+    ![CreateSecurityGroup2](./screenshots/CreateSecurityGroup2.png)
 
     Create the Security Group.
 
@@ -95,20 +95,20 @@ Before we can create and load the database into QuickSight, we must have a few r
 
     Once you are done with this, your configuration should look like this. 
 
-    ![SecurityGroup](/Amazon-QuickSight-and-PostgreSQL-POC/4-Automating-QuickSight-Enablement/screenshots/databasesecuritygroup.png)
+    ![SecurityGroup](./screenshots/databasesecuritygroup.png)
 
     Now, go back to the 'QuickSight Access' Security group and add another inbound rule for the DevSecOps-QuickSight Enablement group we just created. When you're done updating the Security Group, it should look like this.
 
-    ![QSInbound](/Amazon-QuickSight-and-PostgreSQL-POC/3-Connect-QuickSight-to-Aurora-Serverless-PostgreSQL/Screenshots/QSInbound.png)
+    ![QSInbound](./screenshots/QSInbound.png)
 
 4. *QuickSight VPC Connection*: Now go to the AWS QuickSight console. Click on the user at the top right corner and select `'Manage QuickSight'`. On the left-hand side of the page, select `'Manage VPC connections'`. We will need to add a VPC connection specific to the Security Group we just created for `'QuickSight Access'`.
 
-    ![ManageQuickSight](/Amazon-QuickSight-and-PostgreSQL-POC/3-Connect-QuickSight-to-Aurora-Serverless-PostgreSQL/Screenshots/ManageQuickSight.png)
+    ![ManageQuickSight](./screenshots/ManageQuickSight.png)
 
     Select `'Add VPC Connection'`, create a name for it, choose the same VPC (e.g. DevSecOps) that your database uses, choose the same Subnet ID that was used when filling out the parameters for your database (e.g. us-east-1d), and paste the Security group ID from the security group created for QuickSight access (for us this is `sg-084ad5f1763e1c260`). Click `'Create'`.
 
-    ![AddVPCConnection](/Amazon-QuickSight-and-PostgreSQL-POC/3-Connect-QuickSight-to-Aurora-Serverless-PostgreSQL/Screenshots/AddVPCConnection.png)
-    ![VPCConfiguration](/Amazon-QuickSight-and-PostgreSQL-POC/3-Connect-QuickSight-to-Aurora-Serverless-PostgreSQL/Screenshots/VPCConfiguration.png)
+    ![AddVPCConnection](./screenshots/AddVPCConnection.png)
+    ![VPCConfiguration](./screenshots/VPCConfiguration.png)
 
 ## Steps for CloudFormation and Codebuild 
 This section describes how to deploy the automated process. You can skip to Step 5 if you are only changing parameters, such as the JSON file.
@@ -168,15 +168,6 @@ This section describes how to deploy the automated process. You can skip to Step
                 - True      
                 - False    
             Description: A value that indicates whether the DB cluster has deletion protection enabled. The database can't be deleted when deletion protection is enabled. By default, the deletion protection is enabled.
-        EnvironmentTag:
-            Type: String
-            Description: Value for the OCTO Environment tag. See https://infocorp365.sharepoint.com/sites/OCTO-ArchitectureOffice/SitePages/Public%20Cloud%20Tag%20Standards.aspx for info
-            AllowedValues:
-            - DEV
-            - QA
-            - UAT
-            - PROD
-            Default: DEV
         FileName:
             Type: String
             Description: Name of JSON file that you would like to load into DB and QuickSight
@@ -216,20 +207,8 @@ This section describes how to deploy the automated process. You can skip to Step
                 ExcludeCharacters: '"@/\'
             Tags:
                 -
-                Key: OrgID
-                Value: 00410
-                -
-                Key: Capacity
-                Value: BAU
-                -
-                Key: Contact
-                Value: DL-InfoSecEngineering@ihsmarkit.com
-                -
-                Key: Service
-                Value: GlobalCloudSecurity
-                -
-                Key: Environment
-                Value: !Ref EnvironmentTag  
+                Key: 
+                Value: 
         Cluster:
             Type: AWS::RDS::DBCluster
             Properties:
@@ -253,20 +232,8 @@ This section describes how to deploy the automated process. You can skip to Step
             DBSubnetGroupName: !Ref DBSubnetGroupName
             Tags:
                 -
-                Key: OrgID
-                Value: 00410
-                -
-                Key: Capacity
-                Value: BAU
-                -
-                Key: Contact
-                Value: DL-InfoSecEngineering@ihsmarkit.com
-                -
-                Key: Service
-                Value: GlobalCloudSecurity
-                -
-                Key: Environment
-                Value: !Ref EnvironmentTag 
+                Key: 
+                Value: 
         QuickSightDataSetCommit:
             Type: AWS::CodeCommit::Repository
             Properties:
@@ -278,20 +245,8 @@ This section describes how to deploy the automated process. You can skip to Step
                 Key: !Sub '${InitialCommitKey}.zip'
             Tags:
                 -
-                Key: OrgID
-                Value: 00410
-                -
-                Key: Capacity
-                Value: BAU
-                -
-                Key: Contact
-                Value: DL-InfoSecEngineering@ihsmarkit.com
-                -
-                Key: Service
-                Value: GlobalCloudSecurity
-                -
-                Key: Environment
-                Value: !Ref EnvironmentTag
+                Key:
+                Value:
         CodeBuildServiceRole:
             Type: AWS::IAM::Role
             Properties:
@@ -347,20 +302,8 @@ This section describes how to deploy the automated process. You can skip to Step
                 - sts:AssumeRole
             Tags:
                 -
-                Key: OrgID
-                Value: 00410
-                -
-                Key: Capacity
-                Value: BAU
-                -
-                Key: Contact
-                Value: DL-InfoSecEngineering@ihsmarkit.com
-                -
-                Key: Service
-                Value: GlobalCloudSecurity
-                -
-                Key: Environment
-                Value: !Ref EnvironmentTag
+                Key:
+                Value:
         QuickSightDataSetCodeBuild:
             Type: AWS::CodeBuild::Project
             Properties:
@@ -415,20 +358,8 @@ This section describes how to deploy the automated process. You can skip to Step
                 Location: !GetAtt QuickSightDataSetCommit.CloneUrlHttp
             Tags:
                 -
-                Key: OrgID
-                Value: 00410
-                -
-                Key: Capacity
-                Value: BAU
-                -
-                Key: Contact
-                Value: DL-InfoSecEngineering@ihsmarkit.com
-                -
-                Key: Service
-                Value: GlobalCloudSecurity
-                -
-                Key: Environment
-                Value: !Ref EnvironmentTag
+                Key:
+                Value:
         CodeBuildEventRole:
             Type: AWS::IAM::Role
             Properties:
@@ -451,20 +382,8 @@ This section describes how to deploy the automated process. You can skip to Step
                     - sts:AssumeRole
             Tags:
                 -
-                Key: OrgID
-                Value: 00410
-                -
-                Key: Capacity
-                Value: BAU
-                -
-                Key: Contact
-                Value: DL-InfoSecEngineering@ihsmarkit.com
-                -
-                Key: Service
-                Value: GlobalCloudSecurity
-                -
-                Key: Environment
-                Value: !Ref EnvironmentTag
+                Key:
+                Value:
         QuickSightDataSetCodeBuildEvent: 
             Type: AWS::Events::Rule
             Properties:
@@ -737,24 +656,24 @@ This section describes how to deploy the automated process. You can skip to Step
         - echo GuardDuty JSON file loaded into Aurora PostgreSQL Serverless database on `date`
     ```
 
-4.  Zip together the `buildspec.yml` file and the `dbconnect.py` together and upload the zipped file to the `Amazon-QuickSight-and-PostgreSQL-POC/4-Automating-QuickSight-Enablement` folder. An easy way to zip these files is to download them both to your local drive, and manually zip them in the downloads folder.
+4.  Zip together the `buildspec.yml` file and the `dbconnect.py` together and upload the zipped file to a `Amazon-QuickSight-PostgreSQL-Automation` folder on your local computer.
 
-5.  Execute these lines on your command line in Cloud9 environment. This will copy the zipped file from Azure DevOps to your s3 bucket created for this project. Once again, ensure that you have the correct s3 bucket name, zipped file name, and directory inserted before running this command.
+5.  Execute these lines on your command line in Cloud9 environment. This will copy the zipped file from GitHub to your s3 bucket created for this project. Once again, ensure that you have the correct s3 bucket name, zipped file name, and directory inserted before running this command.
 
     ```bash
-    git clone https://ihsmarkit@dev.azure.com/ihsmarkit/Infosec/_git/Amazon%20Quicksight%20Enablement
-    cd Amazon%20Quicksight%20Enablement/Amazon-QuickSight-and-PostgreSQL-POC/4-Automating-QuickSight-Enablement
-    aws s3 cp codecommit-archive.zip s3://quicksight-enablement007553277662
+    git clone https://github.com/osamples/CloudSecurityEngineering.git/Amazon-QuickSight-PostgreSQL-Automation
+    cd Amazon-QuickSight-PostgreSQL-Automation
+    aws s3 cp codecommit-archive.zip s3://YOUR_S3_BUCKET_NAME
     ```
 6.  Go to the CloudFormation console, and create a new stack by uploading a template using the `QuickSight_PostgreSQL_Dataset_CodeBuild_CloudFormation.yaml` file in this repo.
 
     After your local CloudFormation template loads select **Next**. On the next screen enter a **Stack name** and then make a selection for the Parameters. After you have entered the details select **Next** at the bottom-right of the screen.
 
-    ![CloudFormation](/Amazon-QuickSight-and-PostgreSQL-POC/4-Automating-QuickSight-Enablement/screenshots/CloudFormation.PNG)
+    ![CloudFormation](./screenshots/CloudFormation.PNG)
 
     On the next screen scroll down and choose **Next**. In the following screen scroll down, acknowledge the message (**I acknowledge that AWS CloudFormation might create IAM resources with custom names.**) and choose **Create stack** as shown below.
 
-    ![Deploy Stack](/QuickSight-S3-Datasets/screenshots/cfn-deploystack.JPG)
+    ![Deploy Stack](./screenshots/cfn-deploystack.JPG)
 
 7.  Once the CloudFormation stack is created successfully, run the following command in your Cloud9 command line. This will start your first build in CodeBuild.
 
@@ -764,11 +683,11 @@ This section describes how to deploy the automated process. You can skip to Step
 
 8. Go to the CodeBuild console and verify that the build is complete and was successful.
 
-    ![CodeBuild](/Amazon-QuickSight-and-PostgreSQL-POC/4-Automating-QuickSight-Enablement/screenshots/CodeBuild.jpg)
+    ![CodeBuild](./screenshots/CodeBuild.jpg)
 
 9. Go to QuickSight and select `datasets`. Then click `New dataset`. Down at the bottom, you should see a data source that has the name `aurora-postgresql-json-datasource`.  
     
-    ![DataSource](/Amazon-QuickSight-and-PostgreSQL-POC/4-Automating-QuickSight-Enablement/screenshots/DataSource.png)
+    ![DataSource](./screenshots/DataSource.png)
 
     You can now follow the console to succesfully create your dataset within QuickSight and begin analyses.
 
