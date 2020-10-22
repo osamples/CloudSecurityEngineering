@@ -434,7 +434,7 @@ This section will provide the steps for deploying the Tom Sawyer Graph Database 
 
     The 'Vendor' and 'Database' should be the same, and 'Name' and 'Description' can be unique to your database. Save the database once you are done.
 
-    ![DBTemplate](./screenshots/DBTemplate.jpg)
+    ![DBTemplate](./screenshots/DBTemplate.JPG)
 
 5.  From your database, select 'Connections' from the 'Actions' drop down. Now we will connect our Neptune DB.
 
@@ -446,7 +446,7 @@ This section will provide the steps for deploying the Tom Sawyer Graph Database 
 
     Be sure to use your Neptune DB's **Reader Endpoint** as your Cluster Endpoint reference.
 
-    ![connectionTemplate](./screenshots/connectionTemplate.jpg)
+    ![connectionTemplate](./screenshots/connectionTemplate.JPG)
 
     **Important Note:** We will NOT be selecting IAM Database Authentication in this POC. In fact, we will need to disable the cluster's IAM Database Authentication as shown below in order to succesfully connect.
 
@@ -467,19 +467,11 @@ This section will provide the steps for deploying the Tom Sawyer Graph Database 
 
     Your database will load and you can begin graphing!
 
-    ![picture](./screenshots/picture.jpg)
+    ![picture](./screenshots/picture.JPG)
 
 7. Visualizing the same query as before, Tom Sawyer provides us with a lot more detail as you can see in the below. We can explore more queries and options in the future.
 
     ![orgsbySeverity](./screenshots/orgsbySeverity.png)
-
-# Next Steps
-The above sample was only meant to create a Neptune DB cluster and instance. Some options to further enhance or change the scope of this walkthrough:
-
-- Create a Graph Neural Network (or similar) to make predictions on future data
-- Create automated Codebuild scripts for each specific data table to be loaded into Neptune
->- Make the datatypes be more dynamic within ddbtoneptune.py script, rather than String default
->- Make it so that we can choose how many nodes dataframes and edges dataframes we want within ddtoneptune.py script
 
 ## Contribute
 ---
