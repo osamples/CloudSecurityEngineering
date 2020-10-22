@@ -121,11 +121,11 @@ aws s3api list-buckets --query "Buckets[].Name"
 
     As you can see, the files are in the appropriate gremlin format. The nodes represent each student within the karate class. 
 
-    ![nodeexformat](./screenshots/nodeexformat.jpg)
+    ![nodeexformat](./screenshots/nodeexformat.JPG)
 
     The edges represent each relationship between each student in the karate class. You can see that the first relationship is between the first student and the second student, and so on.
 
-    ![edgesformatex](./screenshots/edgesformatex.jpg)
+    ![edgesformatex](./screenshots/edgesformatex.JPG)
 
 2. The second dataset we will use is from the U.S. Department of Transportation for [Airline Flight Statistics](https://www.transtats.bts.gov/DL_SelectFields.asp?Table_ID=). We can load this directly from GitHub using the following script.
 
@@ -152,11 +152,11 @@ aws s3api list-buckets --query "Buckets[].Name"
     ```
     This dataset provides a few more complex relationships. The nodes represent each airport instance and are labeled as such, but it also provides a lot more information related to these unique instances as other properties. We removed some of these in our example for simplicity's sake.
 
-    ![airlinenodeex](./screenshots/airlinenodeex.jpg)
+    ![airlinenodeex](./screenshots/airlinenodeex.JPG)
 
     The edges represent how each flight instance relates to eachother, labeled as the route taken and provides a distance property for further description of the edge. We had to remove the description within our loading process as it is not allowed for the gremlin format. 
 
-    ![airlineedgeex](./screenshots/airlineedgeex.jpg)
+    ![airlineedgeex](./screenshots/airlineedgeex.JPG)
 
 ### Load Gremlin formatted data to Neptune DB from S3 Bucket via the **Command Line**
 ---
