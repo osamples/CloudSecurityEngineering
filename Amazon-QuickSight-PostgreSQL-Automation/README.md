@@ -1,4 +1,4 @@
-# Automating QuickSight Enablement
+# Automating QuickSight Enablement of Aurora Serverless PostgreSQL Database
 
 ## Background
 ---
@@ -122,7 +122,7 @@ In this solution, you will find a guide to deploy Aurora Serverless into an AWS 
 
     ![ManageQuickSight](./screenshots/ManageQuickSight.png)
 
-    Select `'Add VPC Connection'`, create a name for it, choose the same VPC (e.g. DevSecOps) that your database uses, choose the same Subnet ID that was used when filling out the parameters for your database (e.g. us-east-1d), and paste the Security group ID from the security group created for QuickSight access (for us this is `sg-084ad5f1763e1c260`). Click `'Create'`.
+    Select `'Add VPC Connection'`, create a name for it, choose the same VPC (e.g. DevSecOps) that your database uses, choose the same Subnet ID that was used when filling out the parameters for your database (e.g. us-east-1d), and paste the Security group ID from the security group created for QuickSight access. Click `'Create'`.
 
     ![AddVPCConnection](./screenshots/AddVPCConnection.png)
     ![VPCConfiguration](./screenshots/VPCConfiguration.png)
