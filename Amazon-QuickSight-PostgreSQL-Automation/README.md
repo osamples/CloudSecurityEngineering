@@ -1,11 +1,29 @@
 # Automating QuickSight Enablement
 
-In this section, we will explain how to use CloudFormation and CodeBuild to automate the process of creating and loading data into to a database, and connecting that database to QuickSight to use as a data source. 
-
+## Background
 ---
-## Prerequisites
+This solution is in response to the need to create acceptable patterns for how we stage our data and then how we create reporting from the top of it.
 
-Before we can create and load the database into QuickSight, we must have a few resources set up. We assume that you already have a VPC and VPC Subnet groups created. If you don't, please see these resources to set up a [VPC](https://docs.aws.amazon.com/directoryservice/latest/admin-guide/gsg_create_vpc.html) and a [Subnet Group](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DAX.create-cluster.console.create-subnet-group.html)
+QuickSight supports the following Data Sources, one of which is PostgreSQL 9.3.1 or Later - one of the potential use cases is that we can use Aurora Serverless for PostgreSQL which supports v10.7. This repository is a combination of exploring connectivity from QuickSight to Aurora Serverless, using VPCs to connect, using Python to load PostgreSQL, secure ways to deploy this and how to build datasets. 
+
+In this solution, you will find a guide to deploy Aurora Serverless into an AWS VPC, the tools to connect to and load .json data into your previously created Aurora PostgreSQL Serverless Database using [Psycopg2](https://pynative.com/python-postgresql-tutorial/), and the resources to connect that database to QuickSight to use as a data source. We will explain how to use CloudFormation and CodeBuild to automate this process.
+
+## Benefits
+---
+
+- Secure way to deploy datasets for BI use
+- Ability to use querying languages other than QuickSight's SPICE tool
+- Aurora Serverless allows us to use the database when we need it, auto-scaling for our specific purposes.
+
+## Prerequisites
+---
+- Cloud9 IDE with an EC2 Instance Profile that gives access to Security Hub (or whatever you're accesing), S3 and QuickSight. Refer to the [AWS Python Course for instructions on creating a Cloud9 IDE](https://dev.azure.com/ihsmarkit/Infosec/_git/AWS-Security-Python-Course?anchor=setting-up)
+- Access to QuickSight. You should log in by navigating to the console at least once
+- We assume that you already have a VPC and two VPC Subnet groups created. If you don't, please see these resources to set up a [VPC](https://docs.aws.amazon.com/directoryservice/latest/admin-guide/gsg_create_vpc.html) and a [Subnet Group](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DAX.create-cluster.console.create-subnet-group.html) 
+- We also assume that you have a JSON sample dataset that you would like loaded into Amazon QuickSight.
+
+## Build and Test
+---
 1. *S3 Bucket*: In this section we will use Boto3 to interact with the Amazon S3 API and create a S3 bucket. We will need a specific S3 bucket so that we can load our template into it for retrieval via CloudFormation. Within your Cloud9 virtual environment, be sure to install `awscli` and `boto3`.
 
     ```bash
@@ -62,12 +80,11 @@ Before we can create and load the database into QuickSight, we must have a few r
     ```
 2. *JSON Data to S3 Bucket*: Now that we have the S3 bucket available, we can load the data that we would like loaded into QuickSight. 
 
-    Execute these lines on your command line in Cloud9 environment. This will copy the JSON file (we use guardduty-port-findings.json) from Azure DevOps to your s3 bucket created for this project. Before running these lines, ensure that you have inserted the correct directory, file name, and bucket name. 
+    Assuming you have your JSON dataset in a folder called 'Sample-Datasets', execute these lines on your command line in Cloud9 environment. This will copy the JSON file from your Cloud9 folder to your s3 bucket created for this project. Before running these lines, ensure that you have inserted the correct directory, file name, and bucket name. 
 
     ```bash
-    git clone https://github.com/osamples/CloudSecurityEngineering.git/Amazon-QuickSight-PostgreSQL-Automation
-    cd Amazon-QuickSight-PostgreSQL-Automation/Sample-Datasets
-    aws s3 cp guardduty-port-findings.json s3://YOUR_BUCKET_NAME
+    cd Sample-Datasets
+    aws s3 cp YOUR-JSON-FILE.json s3://YOUR_BUCKET_NAME
     ```
 
 
