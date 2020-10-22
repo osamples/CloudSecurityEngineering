@@ -4,7 +4,7 @@ This repository provides the details for the deployment and loading of data into
 ## Background
 ---
 Amazon Neptune is a fast, fully managed graph database service that supports property graph with Apache TinkerPop and Gremlin Language traversals. We will use this graph database to essentially connect lots of semi-connected pieces of data to traverse one relationship in order to get to the target relationship. In order to do so, we must automate Neptune deployment. 
-With the addition of new team members and the commitment to developing the reporting engine of Cyber Risk graph we need to create acceptable patterns for how we stage our data and then how we create relationships from it. We will use CloudFormation and Python scripts to standardize this process for consistent redeployment purposes. This give us a single source of truth for our graph database resources. 
+We need to create acceptable patterns for how we stage our data and then how we create relationships from it. We will use CloudFormation and Python scripts to standardize this process for consistent redeployment purposes. This give us a single source of truth for our graph database resources. 
 
 ## Security Benefits
 ---
@@ -13,6 +13,40 @@ By automating the collection of Whitesource software composition analysis (SCA) 
 > - Increase digestability of data with complex relationships via efficient graph querying.
 
 > - AWS-native implementations which utilize serverless technologies: cost-effective and highly scalable and can be implemented easily by AWS teams for localized copies of the same data the Global Cloud Security Team will collect.
+
+## FAQ
+
+1. What is the purpose of this repo?
+---
+This repository exists as a resource for all things Amazon Neptune. It currently serves as the host of Neptune DB graph deployment, traversal creation, and visualisation.
+
+2. What is Amazon Neptune?
+---
+Amazon Neptune is a fast, fully managed graph database service that supports property graph with Apache TinkerPop and Gremlin Language traversals. We will use this graph database to essentially connect lots of semi-connected pieces of data to traverse one relationship in order to get to the target relationship. In order to do so, we must automate Neptune deployment. 
+
+3. What does this solution do?
+---
+- We will be creating a Neptune DB via the CloudFormation console.
+- Describe how data should be configured in order to load into NeptuneDB using Gremlin
+- Provides example datasets that are outside of our AWS Account
+- Load those datasets using the Command Line
+- Load DynamoDB Data Table into Neptune DB via Python module
+- Connect to Neptune DB via Gremlin and Construct example GREMLIN Traversals for Neptune DB
+- Visualize query results using MatPlotLib
+- Visualize query results using Tom Sawyer Software
+
+4. What are the prerequisites for this solution?
+---
+You should already have a [VPC](https://docs.aws.amazon.com/directoryservice/latest/admin-guide/gsg_create_vpc.html) and [VPC subnets](https://docs.aws.amazon.com/vpc/latest/userguide/working-with-vpcs.html#AddaSubnet) configured within the region you are creating the Neptune DB. Also, you will need access to [Amazon AppStream](https://aws.amazon.com/appstream2/?blog-posts-cards.sort-by=item.additionalFields.createdDate&blog-posts-cards.sort-order=desc) in order to connect to Tom Sawyer.
+
+5. What is Gremlin?
+---
+[Gremlin](https://tinkerpop.apache.org/docs/current/reference/#gremlin-python) is a graph traversal query language developed by Apache TinkerPop for graph analysis. [Apache TinkerPop](https://tinkerpop.apache.org/) is an open source graph computing framework. We will be using 'Gremlin-Python' which can be used on any Python virtual machine.
+
+6. What is the Tom Sawyer Software?
+---
+As stated in the [Product Overview](https://aws.amazon.com/marketplace/pp/Tom-Sawyer-Software-Tom-Sawyer-Graph-Database-Brow/B07JGBY4GJ), Tom Sawyer Graph Database Browser is the first and only application that enables graph database users to see and understand connections in their data without extensive knowledge of the query language or schema. Built with Tom Sawyer Perspectives, it makes graph and data visualization and analysis easy to do.
+
 
 ## Build and Test
 
@@ -472,9 +506,4 @@ This section will provide the steps for deploying the Tom Sawyer Graph Database 
 7. Visualizing the same query as before, Tom Sawyer provides us with a lot more detail as you can see in the below. We can explore more queries and options in the future.
 
     ![orgsbySeverity](./screenshots/orgsbySeverity.png)
-
-## Contribute
----
-If there are links or sections you feel that should be in here please open up a PR by creating a Branch under your name and pushing to mainline!
-
 
