@@ -522,7 +522,7 @@ This section will provide the steps for deploying the Tom Sawyer Graph Database 
 
     ![picture](./screenshots/picture.JPG)
 
-8. Visualizing the same query as before, Tom Sawyer provides us with a lot more detail as you can see in the below. We can explore more queries and options in the future.
+8. Visualizing the same query as before to group nodes by property key/value pair, Tom Sawyer provides us with a lot more detail as you can see in the below. We can explore more queries and options in the future.
 
     ![nodeGrouping](./screenshots/nodeGrouping.JPG)
 
