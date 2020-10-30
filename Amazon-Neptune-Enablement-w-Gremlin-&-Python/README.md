@@ -252,7 +252,7 @@ Now that we have explored the basics for what the data is supposed to look like 
 
 3. Create a python file named `'ddbtoneptune.py'` and paste the following script. You will need to update the parameters to your corresponding `'bucketName'`, `'region'`, `'neptuneEndpoint'`, and `'arnRole'`. 
 
-    This script loads in all of the RiskReconFindings from DynamoDB, creates a relationship from the 'FindingID' to the 'OrganizationID', loads the nodes and edges files into our S3 Bucket, and bulk loads those files into the Neptune DB cluster.
+    This script loads in all any table from DynamoDB, creates a relationship for two chosen nodes, loads the nodes and edges between those two nodes into files stored in our S3 Bucket, and bulk loads those files into the Neptune DB cluster.
 
     You can update the relationship as you wish. Change the very first index in `'specifyProperties1'` and `'specifyProperties2'` as the beginning and endpoint of the edge relationship you are wanting. Alter the other indices to correspond to the chosen primary index.
 
@@ -274,11 +274,11 @@ Now that we have explored the basics for what the data is supposed to look like 
     arnRole = YOUR_ARN_ROLE_FOR_NEPTUNE_DB
     specifyProperties1 = np.r_[4, 0:4, 5, 6, 8, 10:14] #!Ref Type List<Number> in the brackets
     specifyProperties2 = np.r_[7, 9, 14] #!Ref Type List<Number> in the brackets
-    edgeLabel = 'Findings from Organization'
+    edgeLabel = 'Edge1'
     nodesdf1FileName = "nodesdf1.csv"
     nodesdf2FileName = "nodesdf2.csv"
     edgesFileName = "edgesdf.csv"
-    s3SubFolder = 'riskrecon/'
+    s3SubFolder = 'neptunegraph/'
 
     #Create client
     client = boto3.client('dynamodb')
@@ -365,7 +365,7 @@ Now that we have explored the basics for what the data is supposed to look like 
     # Connect to the database and create a graph traversal using the module: neptune.py
     g = Neptune.graphTraversal(Neptune(), neptune_endpoint=neptuneEndpoint, neptune_port=8182, show_endpoint=True, connection=None) 
 
-    # Select a specific node. In this example, we select a specific node from the Organization Node Set of the RiskReconFindings data table
+    # Select a specific node. 
     n0 = g.V().has('UniqueNode2Label', 'NodePropertyKey', 'NodePropertyValue')
     # Get all edges for this node
     n0_edges = n0.bothE().toList()
@@ -376,13 +376,15 @@ Now that we have explored the basics for what the data is supposed to look like 
 
     
 
-    # Show distribution of Risk Recon Findings by Severity
-    vertices1= g.V().hasLabel('FindingsID').groupCount().by('SeverityNumeric').toList()
-    print(vertices1)
 
-    # Display the unique organizations that represent nodes
-    vertices2= g.V().hasLabel('OrganizationID').groupCount().by('OrganizationShortName').toList()
-    print(vertices2)
+
+
+
+
+
+    # Show distribution of Node by one of its Properties
+    vertices1= g.V().hasLabel('NodeIDLabel').groupCount().by('NodePropertyKey').toList()
+    print(vertices1)
     ```
 
     In this example using the **UNIQUENODE2LABEL** dataset, we reference a specific property key value pair. If we would like to use the airlines dataset or the karate dataset, we could reference a different property. For instance, we could reference 'Code' and the value 'ATL' to return all the edges and groupings with the Atlanta Airport.
@@ -431,7 +433,7 @@ Now that we have explored the basics for what the data is supposed to look like 
     #Plot the graph
     Visualisation.plotPaths(Neptune, path, labels, fig = './plot.png')
     ```
-    You will get the graph as a picture output. Not very pretty because of the limitations of MatPlotLib, but we can see that 'IHS Markit' has the most findings with a 'high' Severity Label.
+    You will get the graph as a picture output. 
 
     Now we can go into more detail using the below script.
     ```py
