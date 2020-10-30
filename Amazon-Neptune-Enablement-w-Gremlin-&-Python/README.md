@@ -6,14 +6,6 @@ This repository provides the details for the deployment and loading of data into
 Amazon Neptune is a fast, fully managed graph database service that supports property graph with Apache TinkerPop and Gremlin Language traversals. We will use this graph database to essentially connect lots of semi-connected pieces of data to traverse one relationship in order to get to the target relationship. In order to do so, we must automate Neptune deployment. 
 We need to create acceptable patterns for how we stage our data and then how we create relationships from it. We will use CloudFormation and Python scripts to standardize this process for consistent redeployment purposes. This give us a single source of truth for our graph database resources. 
 
-## Security Benefits
----
-By automating the collection of Whitesource software composition analysis (SCA) information (e.g. vulnerabilities & policy violations), the Global Cloud Security Team can create more accurate reporting and determine inherent risk to assets more accurately.
-
-> - Increase digestability of data with complex relationships via efficient graph querying.
-
-> - AWS-native implementations which utilize serverless technologies: cost-effective and highly scalable and can be implemented easily by AWS teams for localized copies of the same data the Global Cloud Security Team will collect.
-
 ## FAQ
 
 1. What is the purpose of this repo?
