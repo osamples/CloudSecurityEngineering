@@ -239,13 +239,24 @@ Now that we have explored the basics for what the data is supposed to look like 
 
     Since we have already cloned this repository when creating the S3 bucket, be sure to drag and drop these files into the exact directory you are working out of. Otherwise, refer to the S3 bucket section for cloning this repo.
 
-2. Create a python file named `'ddbtoneptune.py'` and paste the following script. You will need to update the parameters to your corresponding `'bucketName'`, `'region'`, `'neptuneEndpoint'`, and `'arnRole'`. 
+2. Once you have the correct files in your working directory, execute the following bash script.
+
+```bash
+    unzip neptune_python_utils.zip
+    pip install gremlinpython
+    pip install matplotlib
+    pip install networkx
+    pip install dynamodb_json
+    pip install pandas
+```
+
+3. Create a python file named `'ddbtoneptune.py'` and paste the following script. You will need to update the parameters to your corresponding `'bucketName'`, `'region'`, `'neptuneEndpoint'`, and `'arnRole'`. 
 
     This script loads in all of the RiskReconFindings from DynamoDB, creates a relationship from the 'FindingID' to the 'OrganizationID', loads the nodes and edges files into our S3 Bucket, and bulk loads those files into the Neptune DB cluster.
 
     You can update the relationship as you wish. Change the very first index in `'specifyProperties1'` and `'specifyProperties2'` as the beginning and endpoint of the edge relationship you are wanting. Alter the other indices to correspond to the chosen primary index.
 
-    For instance, we have chosen **4** as the first index which is the `'FindingId'`. The rest of the indices for `'specifyProperties1'` correspond to the properties relating to `'FindingId'`. We have chosen **7** as the first index for the second list which corresponds to `'OrganizationId'`. The rest of the indices for `'specifyProperties2'` correspond to the properties relating to `'OrganizationId'`, like `'OrganizationName'` and `'OrganizatoinShortName'`. 
+    For instance, we have chosen **4** as the first index which is the `'UniqueNodeId1'`. The rest of the indices for `'specifyProperties1'` correspond to the properties relating to `'UniqueNodeId'`. We have chosen **7** as the first index for the second list which corresponds to `'UniqueNodeId2'`. The rest of the indices for `'specifyProperties2'` correspond to the properties relating to `'UniqueNodeId2'`. 
 
     ```py
     import boto3
@@ -256,7 +267,7 @@ Now that we have explored the basics for what the data is supposed to look like 
     from neptune import Neptune
 
     #Parameters
-    tableName = 'RiskReconFindings'
+    tableName = 'YOUR_DYNAMODB_TABLE_NAME'
     bucketName = YOUR_S3_BUCKET_NAME
     region = YOUR_NEPTUNE_DB_REGION
     neptuneEndpoint = YOUR_NEPTUNE_ENDPOINT
@@ -349,13 +360,13 @@ Now that we have explored the basics for what the data is supposed to look like 
     from neptune import Neptune
 
     # Parameters
-    neptuneEndpoint = os.getenv('NEPTUNE_ENDPOINT', '')
+    neptuneEndpoint = 'YOUR_NEPTUNE_ENDPOINT'
 
     # Connect to the database and create a graph traversal using the module: neptune.py
     g = Neptune.graphTraversal(Neptune(), neptune_endpoint=neptuneEndpoint, neptune_port=8182, show_endpoint=True, connection=None) 
 
     # Select a specific node. In this example, we select a specific node from the Organization Node Set of the RiskReconFindings data table
-    n0 = g.V().has('OrganizationShortName', 'IHS Markit')
+    n0 = g.V().has('UniqueNode2Label', 'NodePropertyKey', 'NodePropertyValue')
     # Get all edges for this node
     n0_edges = n0.bothE().toList()
     # For each edge, get the id of the peer node
@@ -374,7 +385,7 @@ Now that we have explored the basics for what the data is supposed to look like 
     print(vertices2)
     ```
 
-    In this example using the **RiskReconFindings** dataset, we reference the property 'OrganizationShortName' and specify 'IHS Markit'. If we would like to use the airlines dataset or the karate dataset, we could reference a different property. For instance, we could reference 'Code' and the value 'ATL' to return all the edges and groupings with the Atlanta Airport.
+    In this example using the **UNIQUENODE2LABEL** dataset, we reference a specific property key value pair. If we would like to use the airlines dataset or the karate dataset, we could reference a different property. For instance, we could reference 'Code' and the value 'ATL' to return all the edges and groupings with the Atlanta Airport.
 
     ```py
     n0 = g.V().has('code', 'ATL')
@@ -407,41 +418,35 @@ Now that we have explored the basics for what the data is supposed to look like 
     # Connect to the database and create a graph traversal using the module: neptune.py
     g = Neptune.graphTraversal(Neptune(), neptune_endpoint=neptuneEndpoint, neptune_port=8182, show_endpoint=True, connection=None) 
 
-    #Get the nodes with a 'high' Severity Label
-    v = g.V().has('FindingsID', 'SeverityLabel', 'high')
+    #Get the nodes with specific property characteristic
+    v = g.V().has('UniqueNode2Label', 'NodePropertyKey1', 'NodeProperty1Value')
 
     ##################################################################
-    # Plot the findings based on Organization Short Name
-    path = v.out().path().by().by('OrganizationShortName')
+    # Plot the findings based on a different property
+    path = v.out().path().by().by('NodePropertyKey2')
 
     #Get these node labels to colorize the plot
-    labels = g.V().values('OrganizationShortName').toList()
+    labels = g.V().values('NodePropertyKey2').toList()
 
     #Plot the graph
     Visualisation.plotPaths(Neptune, path, labels, fig = './plot.png')
     ```
-    You will get the following graph as an output. Not very pretty because of the limitations of MatPlotLib, but we can see that 'IHS Markit' has the most findings with a 'high' Severity Label.
-
-    ![orgonly](./screenshots/orgonly.png)
+    You will get the graph as a picture output. Not very pretty because of the limitations of MatPlotLib, but we can see that 'IHS Markit' has the most findings with a 'high' Severity Label.
 
     Now we can go into more detail using the below script.
     ```py
     ##################################################################
-    #Get the path to it's peer node and label the start node based off of 'SecurityCriteria' and the end node based off of 'OrganizationShortName'
-    path = v.out().path().by('SecurityCriteria').by('OrganizationShortName').toList()
+    #Get the path to it's peer node and label the start node based off of 'NodePropertyKey1' and the end node based off of 'NodePropertyKey2'
+    path = v.out().path().by('NodePropertyKey1').by('NodePropertyKey2').toList()
 
     #Get these node labels to colorize the plot
-    labels = g.V().values('OrganizationShortName').toList()
+    labels = g.V().values('NodePropertyKey2').toList()
 
     #Plot the graph
     Visualisation.plotPaths(Neptune, path, labels, fig = './plot2.png')
 
     ```
-    This plot shows us what 'Security Criteria' each Organization has when they have a 'high' Severity Label.
-
-    ![orgsecurity](./screenshots/orgsecurity.png)
-
-    As you can see, neither of these plot options are easy to read, so we will look into a tool called Tom Sawyer for improved visualization.
+    As you will be able to see, neither of these plot options are easy to read, so we will look into a tool called Tom Sawyer for improved visualization.
 
 ### Visualize query results using Tom Sawyer Software
 ---
@@ -461,8 +466,20 @@ This section will provide the steps for deploying the Tom Sawyer Graph Database 
     From there, you can follow the steps provided in the same Deployment Guide for [Using the Application](https://www.tomsawyer.com/graph-database-browser/TSS.GDBB.9.0.0.AMI.DeploymentGuide.pdf).
 
     Your `{instance-url}` is your Private IPv4 address.
+    
+4. **Multiple Users**: If you are accessing a Tom Sawyer Graph Database Browser for Amazon Neptune where you would like to allow for multiple people to have access, you will need to connect to the EC2 instance via Session Manager.
 
-4. Once you have succesfully logged into Tom Sawyer, we can prepare a database to load in our Neptune DB. 
+    You will then need to run the following code within the CLI.
+
+    ```bash
+    cd /home/ec2-user
+    sudo su
+    sh enable-user-registration.sh
+    exit
+    ```
+    This enables the instance to allow for multiple users to sign up for a Tom Sawyer Graph Database Browser account.
+
+5. Once you have succesfully logged into Tom Sawyer, we can prepare a database to load in our Neptune DB. 
     
     ![addDB](./screenshots/addDB.jpg)
 
@@ -470,7 +487,7 @@ This section will provide the steps for deploying the Tom Sawyer Graph Database 
 
     ![DBTemplate](./screenshots/DBTemplate.JPG)
 
-5.  From your database, select 'Connections' from the 'Actions' drop down. Now we will connect our Neptune DB.
+6.  From your database, select 'Connections' from the 'Actions' drop down. Now we will connect our Neptune DB.
 
     ![actionConnections](./screenshots/actionConnections.jpg)
 
@@ -495,7 +512,7 @@ This section will provide the steps for deploying the Tom Sawyer Graph Database 
     ![applyImmediately](./screenshots/applyImmediately.jpg)
 
 
-6. From your connection within Tom Sawyer, select 'Connect' from the 'Actions' drop down. 
+7. From your connection within Tom Sawyer, select 'Connect' from the 'Actions' drop down. 
 
     ![actionConnect](./screenshots/actionConnect.jpg)
 
@@ -503,7 +520,7 @@ This section will provide the steps for deploying the Tom Sawyer Graph Database 
 
     ![picture](./screenshots/picture.JPG)
 
-7. Visualizing the same query as before, Tom Sawyer provides us with a lot more detail as you can see in the below. We can explore more queries and options in the future.
+8. Visualizing the same query as before, Tom Sawyer provides us with a lot more detail as you can see in the below. We can explore more queries and options in the future.
 
     ![orgsbySeverity](./screenshots/orgsbySeverity.png)
 
