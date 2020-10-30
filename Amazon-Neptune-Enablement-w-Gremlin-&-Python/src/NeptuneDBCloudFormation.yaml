@@ -105,15 +105,6 @@ Parameters:
         AllowedValues:
         - 'true'
         - 'false'
-    EnvironmentTag:
-        Type: String
-        Description: Value for the OCTO Environment tag. See https://infocorp365.sharepoint.com/sites/OCTO-ArchitectureOffice/SitePages/Public%20Cloud%20Tag%20Standards.aspx for info
-        AllowedValues:
-        - DEV
-        - QA
-        - UAT
-        - PROD
-        Default: DEV
 Resources:
 ##IAM Roles
     NeptuneServiceRole:
@@ -170,22 +161,6 @@ Resources:
               Action:
               - sts:AssumeRole
         Tags:
-            -
-                Key: OrgID
-                Value: 00410
-            -
-                Key: Capacity
-                Value: BAU
-            -
-                Key: Contact
-                Value: DL-InfoSecEngineering@ihsmarkit.com
-            -
-                Key: Service
-                Value: GlobalCloudSecurity
-            -
-                Key: Environment
-                Value: !Ref EnvironmentTag
-###
     NeptuneSG:
         Type: AWS::EC2::SecurityGroup
         Properties: 
@@ -213,21 +188,6 @@ Resources:
               ToPort: 443
               SourceSecurityGroupId: !Ref VpcSGId
           Tags: 
-            -
-                Key: OrgID
-                Value: 00410
-            -
-                Key: Capacity
-                Value: BAU
-            -
-                Key: Contact
-                Value: DL-InfoSecEngineering@ihsmarkit.com
-            -
-                Key: Service
-                Value: GlobalCloudSecurity
-            -
-                Key: Environment
-                Value: !Ref EnvironmentTag 
     NeptuneDBClusterParameterGroup:
         Type: 'AWS::Neptune::DBClusterParameterGroup'
         Properties:
@@ -237,21 +197,6 @@ Resources:
             Parameters:
                 neptune_enable_audit_log: !Ref NeptuneEnableAuditLog
             Tags: 
-            -
-                Key: OrgID
-                Value: 00410
-            -
-                Key: Capacity
-                Value: BAU
-            -
-                Key: Contact
-                Value: DL-InfoSecEngineering@ihsmarkit.com
-            -
-                Key: Service
-                Value: GlobalCloudSecurity
-            -
-                Key: Environment
-                Value: !Ref EnvironmentTag 
     NeptuneDBCluster:
         Type: AWS::Neptune::DBCluster
         Properties:
@@ -273,21 +218,6 @@ Resources:
                 - !Ref NeptuneSG
  #          SnapshotIdentifier: # Enable for the DB cluster snapshot from which you want to restore            
             Tags: 
-            -
-                Key: OrgID
-                Value: 00410
-            -
-                Key: Capacity
-                Value: BAU
-            -
-                Key: Contact
-                Value: DL-InfoSecEngineering@ihsmarkit.com
-            -
-                Key: Service
-                Value: GlobalCloudSecurity
-            -
-                Key: Environment
-                Value: !Ref EnvironmentTag 
         DependsOn:
           - NeptuneServiceRole
                   # Remove this if the role specifies this specific Cluster  
