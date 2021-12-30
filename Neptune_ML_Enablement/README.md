@@ -1,4 +1,4 @@
-#Setting Up Neptune SageMaker Notebook
+# Setting Up Neptune SageMaker Notebook
 
 ### Prerequisites
 ---
