@@ -7,3 +7,5 @@ This documentation consists of enabling AWS' graph dabase tool (Neptune) for dat
 
 These documentation sources only provide enablement steps. The machine learning associated with these implementations was confidential, but you can discover generic examples [here](https://github.com/aws/graph-notebook/tree/main/src/graph_notebook/notebooks).
 
+You will also find a blog I wrote on optimization techniques.
+
